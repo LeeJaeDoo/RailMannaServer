@@ -1,3 +1,7 @@
+/**
+ * Created by jaedoo on 2017-02-25.
+ */
+
 var mysql = require('mysql');
 
 exports.connect = function() {
