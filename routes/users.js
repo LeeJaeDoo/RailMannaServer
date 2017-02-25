@@ -80,11 +80,26 @@ router.get('/msg/:receiver_id', function(req, res){
     var receiverID = req.params.receiver_id;
     var sql = 'SELECT * FROM msg_tb WHERE receiver_id = ? ORDER BY read_count, time DESC';
     connection.query(sql, receiverID, function(err, rows){
-        if(err){
+        if (err) {
             console.error("err : " + err);
             res.status(500).json({result: false});
-        }else{
-            res.status(200).json({result: rows});
+        } else {
+            var list = [];
+            var rowsSize = rows.length;
+            var listSize;
+            for(var i=0; i<rowsSize; i++) {
+                var count = 0;
+                listSize = list.length;
+                for(var j=0; j<listSize; j++) {
+                    if(rows[i].sender_id === list[j].sender_id) {
+                        count++;
+                    }
+                }
+                if(count === 0) {
+                    list.push(rows[i]);
+                }
+            }
+            res.status(200).json({result: list});
         }
     });
 });

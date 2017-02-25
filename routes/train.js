@@ -28,7 +28,6 @@ var userTrainCheck = function(body, res) {
     var check_params = [body.kakao_id];
     connection.query(checkSQL, check_params, function(error, user) {
         if (error) {
-            console.log('1 : '+error);
             res.status(500).json({ result: false, train_num: null });
         } else {
             if (user[0] !== undefined) {
@@ -46,7 +45,6 @@ var userTrainEnroll = function(body, res) {
     var up_params = [body.kakao_id, body.day, body.start_station, body.start_time, body.arrive_station];
     connection.query(upSQL, up_params, function(error, row) {
         if (error) {
-            console.log('2 : '+error);
             res.status(500).json({ result: false, train_num: null });
         } else {
             getTrainNum(up_params[2], up_params[3], res);
@@ -60,7 +58,6 @@ var getTrainNum = function(station, time, res) {
     var params = [station, time];
     connection.query(getTrainNumSQL, params, function(error, train_num) {
         if (error) {
-            console.log('3 : '+error);
             res.status(500).json({ result: false, train_num: null });
         } else {
             res.status(200).json({ result: true, train_num: train_num[0].train_num });
@@ -83,7 +80,7 @@ var getUserType = function(body, res) {
             console.log('1 : '+error);
             res.status(500).json({
                 train_room_num: 0,
-                kakao_id: null
+                user_list: null
             });
         } else {
             var myGender = user[0].gender;      //0:남성 or 1:여성
@@ -117,7 +114,7 @@ var getTrainRoom = function(body, ty, res) {
             console.log('2 : '+error);
             res.status(500).json({
                 train_room_num: 0,
-                kakao_id: null
+                user_list: null
             });
         } else {
             if(!room[0]) {
@@ -139,7 +136,7 @@ var createRoom = function(body, ty, res) {
             console.log('3 : '+error);
             res.status(500).json({
                 train_room_num: 0,
-                kakao_id: null
+                user_list: null
             });
         } else {
             var list = [];
@@ -148,45 +145,41 @@ var createRoom = function(body, ty, res) {
     });
 };
 
-//채팅방에 있는 유저 리스트를 가져옴
+//채팅방에 있는 유저 kakaoID와 nickname을 가져옴
 var getRoomUserList = function(body, room_num, res) {
-    var userListSQL = 'select * from room_users where room_num=?';
+    var userListSQL = 'SELECT kakao_id, nickname FROM room_users JOIN user USING (kakao_id) WHERE room_num=?';
     var params = [room_num];
-    connection.query(userListSQL, params, function(error, list) {
+    connection.query(userListSQL, params, function(error, chatInfo) {
         if (error) {
-            console.log('4 : '+error);
+            console.log('4 : '+ error);
             res.status(500).json({
                 train_room_num: 0,
-                kakao_id: null
+                user_list: null
             });
         } else {
-            inRoom(body, room_num, list, res);
+            inRoom(body, room_num, chatInfo, res);
         }
     });
 };
 
 //room_users 테이블에 사용자를 insert
-var inRoom = function(body, room_num, list, res) {
+var inRoom = function(body, room_num, chatInfo, res) {
     var inSQL = 'insert into room_users(room_num, kakao_id) values(?, ?)';
     var params = [room_num, body.kakao_id];
     connection.query(inSQL, params, function(error, row) {
         if (error) {
-            console.log('5 : '+error);
+            console.log('5 : '+ error);
             res.status(500).json({
                 train_room_num: 0,
-                kakao_id: null
+                user_list: null
             });
         } else {
             res.status(200).json({
                 train_room_num: room_num,
-                kakao_id: list
+                user_list: chatInfo
             });
         }
     });
-};
-
-var getUserNames = function() {
-
 };
 
 module.exports = router;
