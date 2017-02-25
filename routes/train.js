@@ -5,7 +5,7 @@ var connection = require('../libs/dbConnect.js').connect();
 
 router.get('/list', function(req, res, next) {
     var lineListSQL = 'select * from line_tb';
-    var timeTableSQL = 'slect * from train_time_tb';
+    var timeTableSQL = 'select * from train_time_tb';
     connection.query(lineListSQL, function(error, lineList) {
         if (error) {
             res.status(500).json({ lineTable: null, timeTable: null });
@@ -183,6 +183,10 @@ var inRoom = function(body, room_num, list, res) {
             });
         }
     });
+};
+
+var getUserNames = function() {
+
 };
 
 module.exports = router;

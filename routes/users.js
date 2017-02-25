@@ -15,8 +15,7 @@ router.get('/duplication', function(req, res, next){
           console.error("err : " + err);
           res.status(500).json({result: false});
       } else {
-          console.log("rows : " + JSON.stringify(rows));
-          if(rows[0]) {   //이미 가입된 회원인 경우
+          if(rows[0] !== undefined) {   //이미 가입된 회원인 경우
               res.status(200).json({result: false});
           } else {         //처음 가입하는 경우
               res.status(200).json({result: true});
@@ -26,7 +25,7 @@ router.get('/duplication', function(req, res, next){
 
 });
 
-router.post('/singUp', function(req, res, next) {
+router.post('/up', function(req, res, next) {
     var kakaoID = req.body.kakao_id;
     var nickname = req.body.nickname;
     var gender = req.body.gender;
@@ -35,10 +34,11 @@ router.post('/singUp', function(req, res, next) {
     var say = req.body.say;
     connection.query('INSERT INTO user (kakao_id, nickname, gender, same_gender, other_gender, say) VALUES (?, ?, ?, ?, ?, ?);',
         [kakaoID, nickname, gender, same_gender, other_gender, say], function(err, rows){
-        if(err)
-            console.error("err : " + err);
-        else
+        if(err) {
+            res.status(500).json({result: false});
+        } else {
             res.status(200).json({result: true});
+        }
     });
 });
 
@@ -77,17 +77,29 @@ router.post('/profile', function(req, res){
 
 //받은 쪽지함 리스트 조회
 router.get('/msg/:receiver_id', function(req, res){
-  var receiverID = req.params.receiver_id;
-  var sql = 'SELECT sender_id, msg, time, read_count FROM msg_tb WHERE receiver_id = ? ORDER BY time DESC';
-  connection.query(sql, receiverID, function(err, rows){
-    if(err){
-        console.error("err : " + err);
-        res.status(500).json({result: false});
-    }else{
-        res.status(200).json({result: rows});
-    }
-  })
-})
+    var receiverID = req.params.receiver_id;
+    var sql = 'SELECT * FROM msg_tb WHERE receiver_id = ? ORDER BY read_count, time DESC';
+    connection.query(sql, receiverID, function(err, rows){
+        if(err){
+            console.error("err : " + err);
+            res.status(500).json({result: false});
+        }else{
+            res.status(200).json({result: rows});
+        }
+    });
+});
+
+router.get('/msg/:msg_id', function(req, res) {
+    var msgCheckSQL = 'update msg_tb set read_count=1 where id=?';
+    var params = [req.params.msg_id];
+    connection.query(msgCheckSQL, params, function(error, rows) {
+        if (error) {
+            res.status(500).json({ result: false });
+        } else {
+            res.status(200).json({ result: true });
+        }
+    });
+});
 
 //메세지 전송
 router.post('/msg', function(req, res){
