@@ -5,37 +5,42 @@ var connection = require('../libs/dbConnect').connect();
 
 /* GET users listing. */
 
-//회원가입
-router.post('/signUp', function(req, res, next){
-  var kakaoID = req.body.kakao_id;
+//회원가입//duplication?kakao_id=asd
+router.get('/duplication', function(req, res, next){
+  var kakaoID = req.query.kakao_id;
 
   var sql = 'SELECT kakao_id FROM user WHERE kakao_id = ?';
   connection.query(sql, kakaoID, function(err, rows){
       if (err){
           console.error("err : " + err);
           res.status(500).json({result: false});
-      } else{
-          var nickname = req.body.nickname;
-          var gender = req.body.gender;
-          var same_gender = req.body.same_gender;
-          var other_gender = req.body.other_gender;
-          var say = req.body.say;
+      } else {
           console.log("rows : " + JSON.stringify(rows));
-          if(rows[0])   //이미 가입된 회원인 경우
+          if(rows[0]) {   //이미 가입된 회원인 경우
               res.status(200).json({result: false});
-          else{         //처음 가입하는 경우
-            connection.query('INSERT INTO user (kakao_id, nickname, gender, same_gender, other_gender, say) VALUES (?, ?, ?, ?, ?, ?);',
-                [kakaoID, nickname, gender, same_gender, other_gender, say], function(err, rows){
-                if(err)
-                    console.error("err : " + err);
-                else
-                    res.status(200).json({result: true});
-            })
+          } else {         //처음 가입하는 경우
+              res.status(200).json({result: true});
           }
       }
-  })
+  });
 
-})
+});
+
+router.post('/singUp', function(req, res, next) {
+    var kakaoID = req.body.kakao_id;
+    var nickname = req.body.nickname;
+    var gender = req.body.gender;
+    var same_gender = req.body.same_gender;
+    var other_gender = req.body.other_gender;
+    var say = req.body.say;
+    connection.query('INSERT INTO user (kakao_id, nickname, gender, same_gender, other_gender, say) VALUES (?, ?, ?, ?, ?, ?);',
+        [kakaoID, nickname, gender, same_gender, other_gender, say], function(err, rows){
+        if(err)
+            console.error("err : " + err);
+        else
+            res.status(200).json({result: true});
+    });
+});
 
 //프로필 조회
 router.get('/profile/:kakao_id', function(req, res){

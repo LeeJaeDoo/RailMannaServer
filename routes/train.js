@@ -3,6 +3,21 @@ var router = express.Router();
 
 var connection = require('../libs/dbConnect.js').connect();
 
+router.get('/list', function(req, res, next) {
+    var lineListSQL = 'select * from line_tb';
+    var timeTableSQL = 'slect * from train_time_tb';
+    connection.query(lineListSQL, function(error, lineList) {
+        if (error) {
+            res.status(500).json({ lineTable: null, timeTable: null });
+        } else {
+            connection.query(timeTableSQL, function(error, timeList) {
+                if (error) res.status(500).json({ lineTable: null, timeTable: null });
+                res.status(200).json({ lineTable: lineList, timeTable: timeList });
+            });
+        }
+    });
+});
+
 router.post('/up', function(req, res, next) {
     userTrainCheck(req.body, res);
 });
@@ -13,9 +28,10 @@ var userTrainCheck = function(body, res) {
     var check_params = [body.kakao_id];
     connection.query(checkSQL, check_params, function(error, user) {
         if (error) {
+            console.log('1 : '+error);
             res.status(500).json({ result: false, train_num: null });
         } else {
-            if (user[0]) {
+            if (user[0] !== undefined) {
                 res.status(200).json({ result: false, train_num: null });
             } else {
                 userTrainEnroll(body, res);
@@ -30,6 +46,7 @@ var userTrainEnroll = function(body, res) {
     var up_params = [body.kakao_id, body.day, body.start_station, body.start_time, body.arrive_station];
     connection.query(upSQL, up_params, function(error, row) {
         if (error) {
+            console.log('2 : '+error);
             res.status(500).json({ result: false, train_num: null });
         } else {
             getTrainNum(up_params[2], up_params[3], res);
@@ -39,13 +56,14 @@ var userTrainEnroll = function(body, res) {
 
 //유저가 등록한 열차번호(고유번호)를 리턴
 var getTrainNum = function(station, time, res) {
-    var getTrainNumSQL = 'select train_num train_time where start_station=? and start_time=?';
+    var getTrainNumSQL = 'select train_num from train_time_tb where start_station=? and start_time=?';
     var params = [station, time];
     connection.query(getTrainNumSQL, params, function(error, train_num) {
         if (error) {
+            console.log('3 : '+error);
             res.status(500).json({ result: false, train_num: null });
         } else {
-            res.status(200).json({ result: true, train_num: train_num });
+            res.status(200).json({ result: true, train_num: train_num[0].train_num });
         }
     });
 };
@@ -58,10 +76,11 @@ router.post('/room', function(req, res, next) {
 
 //유저의 성별을 파악하고, 동행자의 성별 설정 타입을 확인한다.
 var getUserType = function(body, res) {
-    var userTySQL = 'select gender, same_gender, other_gender user where kakao_id=?';
+    var userTySQL = 'select gender, same_gender, other_gender from user where kakao_id=?';
     var params = [body.kakao_id];
     connection.query(userTySQL, params, function(error, user) {
         if (error) {
+            console.log('1 : '+error);
             res.status(500).json({
                 train_room_num: 0,
                 kakao_id: null
@@ -95,6 +114,7 @@ var getTrainRoom = function(body, ty, res) {
     var params = [body.train_num, ty];
     connection.query(getRoomSQL, params, function(error, room) {
         if (error) {
+            console.log('2 : '+error);
             res.status(500).json({
                 train_room_num: 0,
                 kakao_id: null
@@ -111,11 +131,12 @@ var getTrainRoom = function(body, ty, res) {
 };
 
 //방이 없는 경우 생성
-var createRoom = function(body, res) {
+var createRoom = function(body, ty, res) {
     var insertSQL = 'insert into room(train_num, ty) values(?, ?),(?, ?),(?, ?)';
     var params = [body.train_num, 0, body.train_num, 1, body.train_num, 2];
     connection.query(insertSQL, params, function(error, rooms) {
         if (error) {
+            console.log('3 : '+error);
             res.status(500).json({
                 train_room_num: 0,
                 kakao_id: null
@@ -133,6 +154,7 @@ var getRoomUserList = function(body, room_num, res) {
     var params = [room_num];
     connection.query(userListSQL, params, function(error, list) {
         if (error) {
+            console.log('4 : '+error);
             res.status(500).json({
                 train_room_num: 0,
                 kakao_id: null
@@ -149,6 +171,7 @@ var inRoom = function(body, room_num, list, res) {
     var params = [room_num, body.kakao_id];
     connection.query(inSQL, params, function(error, row) {
         if (error) {
+            console.log('5 : '+error);
             res.status(500).json({
                 train_room_num: 0,
                 kakao_id: null
@@ -161,3 +184,5 @@ var inRoom = function(body, room_num, list, res) {
         }
     });
 };
+
+module.exports = router;
