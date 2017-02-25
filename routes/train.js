@@ -69,17 +69,41 @@ var getTrainNum = function(station, time, res) {
 //해당 열차의 채팅방이 있으면 값을 보내주고 없으면 생성해서 보내줌
 //profile에서 설정 정보를 먼저 가져옴
 router.post('/room', function(req, res, next) {
-    getUserType(req.body, res);
+    userInRoomCheck(req.body, function(user) {
+        if(user) {  //이미 방이 존재하는 경우 원래 있던 방으로
+            req.body.flag = false;
+            getRoomUserList(req.body, user.room_num, res);
+        } else {    //방이 없는 경우
+            req.body.flag = true;
+            getUserType(req.body, res, function(ty) {
+                getTrainRoom(req.body, ty, res);
+            });
+        }
+    });
 });
 
+//유저가 이미 참여한 방이 있는지 체크
+var userInRoomCheck = function(body, cb) {
+    var checkSQL = 'select * from room_users where kakao_id=?';
+    var params = [body.kakao_id];
+    connection.query(checkSQL, params, function(error, user) {
+        if (error) {
+            return cb(false);
+        } else {
+            if(user[0] !== 'undefined') return cb(user[0]);
+            return cb(false);
+        }
+    });
+};
+
 //유저의 성별을 파악하고, 동행자의 성별 설정 타입을 확인한다.
-var getUserType = function(body, res) {
+var getUserType = function(body, res, cb) {
     var userTySQL = 'select gender, same_gender, other_gender from user where kakao_id=?';
     var params = [body.kakao_id];
     connection.query(userTySQL, params, function(error, user) {
         if (error) {
             console.log('1 : '+error);
-            res.status(500).json({
+            res.status(500).render('index.ejs', {
                 train_room_num: 0,
                 user_list: null
             });
@@ -101,7 +125,7 @@ var getUserType = function(body, res) {
             } else if(myType === 2) {
                 ty = 0;
             }
-            getTrainRoom(body, ty, res);
+            return cb(ty);
         }
     });
 };
@@ -113,12 +137,12 @@ var getTrainRoom = function(body, ty, res) {
     connection.query(getRoomSQL, params, function(error, room) {
         if (error) {
             console.log('2 : '+error);
-            res.status(500).json({
+            res.status(500).render('index.ejs', {
                 train_room_num: 0,
                 user_list: null
             });
         } else {
-            if(!room[0]) {
+            if(room[0] === undefined) {
                 //var room_status = (room[0]) ? true : false; //방이 존재하는지 아닌지
                 createRoom(body, ty, res);
             } else {
@@ -135,7 +159,7 @@ var createRoom = function(body, ty, res) {
     connection.query(insertSQL, params, function(error, rooms) {
         if (error) {
             console.log('3 : '+error);
-            res.status(500).json({
+            res.status(500).render('index.ejs', {
                 train_room_num: 0,
                 user_list: null
             });
@@ -153,47 +177,54 @@ var getRoomUserList = function(body, room_num, res) {
     connection.query(userListSQL, params, function(error, chatInfo) {
         if (error) {
             console.log('4 : '+ error);
-            res.status(500).json({
+            res.status(500).render('index.ejs', {
                 train_room_num: 0,
                 user_list: null
             });
         } else {
-            inRoom(body, room_num, chatInfo, res);
+            //+사용자 본인 정보
+            var myInfoSQL = 'select kakao_id, nickname from user where kakao_id=?';
+            var param = [body.kakao_id];
+            connection.query(myInfoSQL, param, function(error, myInfo) {
+                if (error) {
+                    res.status(500).render('index.ejs', {
+                        train_room_num: 0,
+                        user_list: null
+                    });
+                } else {
+                    chatInfo.push(myInfo);
+                    inRoom(body, room_num, chatInfo, res);
+                }
+            });
         }
     });
 };
 
 //room_users 테이블에 사용자를 insert
 var inRoom = function(body, room_num, chatInfo, res) {
-    var inSQL = 'insert into room_users(room_num, kakao_id) values(?, ?)';
-    var params = [room_num, body.kakao_id];
-    connection.query(inSQL, params, function(error, row) {
-        if (error) {
-            console.log('5 : '+ error);
-            res.status(500).json({
-                train_room_num: 0,
-                user_list: null
-            });
-        } else {
-            var myInfoSQL = 'select kakao_id, nickname from user where kakao_id=?';
-            var param = [body.kakao_id];
-            connection.query(myInfoSQL, param, function(error, myInfo) {
-                if (error) {
-                    res.status(500).json({
-                        train_room_num: 0,
-                        user_list: null
-                    });
-                } else {
-                    chatInfo.push(myInfo);
-                    console.log(chatInfo);
-                    res.status(200).json({
-                        train_room_num: room_num,
-                        user_list: chatInfo
-                    });
-                }
-            });
-        }
-    });
+    if(body.flag) {
+        var inSQL = 'insert into room_users(room_num, kakao_id) values(?, ?)';
+        var params = [room_num, body.kakao_id];
+        connection.query(inSQL, params, function(error, row) {
+            if (error) {
+                console.log('5 : '+ error);
+                res.status(500).render('index.ejs', {
+                    train_room_num: 0,
+                    user_list: null
+                });
+            } else {
+                res.status(200).render('index.ejs', {
+                    train_room_num: room_num,
+                    user_list: chatInfo
+                });
+            }
+        });
+    } else {
+        res.status(200).render('index.ejs', {
+            train_room_num: room_num,
+            user_list: chatInfo
+        });
+    }
 };
 
 module.exports = router;

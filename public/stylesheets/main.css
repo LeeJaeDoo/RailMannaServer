@@ -1,0 +1,63 @@
+
+/* Published by YAPP DevCamp 3rd team - Railmeet at 2017. 02. 25 */
+/*@import url(//fonts.googleapis.com/earlyaccess/notosanskr.css);*/
+* { font-family: 'Noto Sans KR', sans-serif !important; }
+body { background-color: #fff !important; }
+form#chatForm { max-width: 1080px; width: 100%; }
+form#chatForm .chatView {
+    border: 1px solid #ccc;
+    font-size: 13px;
+    resize: none;
+    overflow-y: scroll;
+    display: block;
+    background: #E9F2EF;
+    max-width: 1080px;
+    width: 100%;
+}
+
+form#chatForm .sendWrap { background: #fff; padding: 0px 15px; }
+
+form#chatForm #message  {
+    width: 80%;
+    height: 43px;
+    margin-right: -7px;
+    border: 1px solid #D1D1D1 !important;
+    border-bottom: none;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    background: #F6F6F6;
+    position: relative;
+    top: -2.5px;
+}
+
+form#chatForm  button {
+    background: #F16D69;
+    color: #fff;
+    padding: 0px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    height: 45px;
+    font-weight: bold;
+    font-size: 16px;
+    width: 20%;
+}
+
+.chatView::-webkit-scrollbar-track
+{
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+	border-radius: 10px;
+	background-color: #F5F5F5;
+}
+
+.chatView::-webkit-scrollbar
+{
+	width: 12px;
+	background-color: #F5F5F5;
+}
+
+.chatView::-webkit-scrollbar-thumb
+{
+	border-radius: 10px;
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+	background-color: #555;
+}
