@@ -1,14 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-var mysql = require('mysql');
-var pool = mysql.createPool({
-    connectionLimit: 4,
-    host: 'localhost',
-    user: 'root',
-    database: 'nodejs_study',
-    password: '1111'
-});
+var pool = require('../libs/dbConnect.js').connect();
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
