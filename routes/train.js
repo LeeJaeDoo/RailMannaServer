@@ -30,6 +30,7 @@ var userTrainCheck = function(body, res) {
         if (error) {
             res.status(500).json({ result: false, train_num: null });
         } else {
+            console.log(user[0]);
             if (user[0] !== undefined) {
                 res.status(200).json({ result: false, train_num: null });
             } else {
@@ -174,9 +175,22 @@ var inRoom = function(body, room_num, chatInfo, res) {
                 user_list: null
             });
         } else {
-            res.status(200).json({
-                train_room_num: room_num,
-                user_list: chatInfo
+            var myInfoSQL = 'select kakao_id, nickname from user where kakao_id=?';
+            var param = [body.kakao_id];
+            connection.query(myInfoSQL, param, function(error, myInfo) {
+                if (error) {
+                    res.status(500).json({
+                        train_room_num: 0,
+                        user_list: null
+                    });
+                } else {
+                    chatInfo.push(myInfo);
+                    console.log(chatInfo);
+                    res.status(200).json({
+                        train_room_num: room_num,
+                        user_list: chatInfo
+                    });
+                }
             });
         }
     });
